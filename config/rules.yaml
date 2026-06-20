@@ -1,0 +1,30 @@
+version: 1
+mode_defaults:
+  paper_first: true
+universe:
+  allowed_symbols:
+    - SPY
+    - QQQ
+    - IWM
+    - GLD
+    - TLT
+    - AAPL
+    - MSFT
+    - NVDA
+    - META
+    - AMZN
+    - GOOGL
+    - TSLA
+risk:
+  max_position_allocation_pct: 25
+  max_new_trades_per_week: 1
+  max_order_notional_cents: 5000
+  quorum_pct: 60
+  require_majority_pct: 50
+  allow_margin: false
+  allow_shorting: false
+  allow_options: false
+  allow_crypto: false
+execution:
+  require_approval_for_live: true
+  require_approval_for_paper: false

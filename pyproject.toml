@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "sqlmodel>=0.0.38",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
