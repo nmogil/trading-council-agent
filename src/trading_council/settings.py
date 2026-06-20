@@ -36,6 +36,13 @@ class Settings(BaseSettings):
         alias="ALPACA_PAPER_BASE_URL",
     )
 
+    # Research agent (LLM brief). Keys are optional: missing ones disable that source.
+    anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    research_model: str = Field(default="claude-opus-4-8", alias="TRADING_COUNCIL_RESEARCH_MODEL")
+    financial_datasets_api_key: str | None = Field(
+        default=None, alias="FINANCIAL_DATASETS_API_KEY"
+    )
+
     # Alpaca live — leave unset until a later phase enables live trading.
     alpaca_live_api_key: str | None = Field(default=None, alias="ALPACA_LIVE_API_KEY")
     alpaca_live_secret_key: str | None = Field(default=None, alias="ALPACA_LIVE_SECRET_KEY")

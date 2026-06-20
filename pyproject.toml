@@ -11,6 +11,8 @@ dependencies = [
     "sqlmodel>=0.0.38",
     "pyyaml>=6.0",
     "alpaca-py>=0.40",
+    "anthropic>=0.40",
+    "httpx>=0.27",
 ]
 
 [project.scripts]
