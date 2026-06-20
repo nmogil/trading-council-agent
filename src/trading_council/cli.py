@@ -17,6 +17,8 @@ from trading_council.execution import (
 )
 from trading_council.models import Order
 from trading_council.proposals import create_proposal
+from trading_council.reconcile import reconcile as reconcile_service
+from trading_council.reports import portfolio_summary, weekly_recap
 from trading_council.settings import Settings
 from trading_council.votes import close_vote, record_vote
 
@@ -172,6 +174,46 @@ def execute(proposal_id: str = typer.Argument(...)) -> None:
             f"submitted order {order.id} for {proposal_id}: "
             f"{order.symbol} {order.side} {order.notional_cents}c status={order.status}"
         )
+
+
+@app.command()
+def reconcile() -> None:
+    """Pull broker account/positions into the ledger; fails cleanly without creds."""
+    settings = Settings()
+    broker = AlpacaBroker(settings)
+    engine = db.init_db(settings.database_url)
+    with db.get_session(engine) as session:
+        try:
+            result = reconcile_service(session, broker=broker, actor="cli")
+        except BrokerCredentialsError as exc:
+            session.rollback()
+            typer.echo(f"trading-council: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        session.commit()
+        typer.echo(
+            f"reconciled: positions={result.positions_upserted} "
+            f"removed={result.positions_removed} "
+            f"missing_from_broker={result.missing_from_broker} "
+            f"extra_on_broker={result.extra_on_broker}"
+        )
+
+
+@app.command()
+def portfolio() -> None:
+    """Print a read-only portfolio summary. Exits 0 even with no data."""
+    settings = Settings()
+    engine = db.init_db(settings.database_url)
+    with db.get_session(engine) as session:
+        typer.echo(portfolio_summary(session, settings=settings))
+
+
+@app.command(name="weekly-recap")
+def weekly_recap_command() -> None:
+    """Print a read-only weekly recap. Exits 0 even with no data."""
+    settings = Settings()
+    engine = db.init_db(settings.database_url)
+    with db.get_session(engine) as session:
+        typer.echo(weekly_recap(session, settings=settings))
 
 
 if __name__ == "__main__":  # pragma: no cover
