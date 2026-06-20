@@ -108,6 +108,56 @@ def propose(
 
 
 @app.command()
+def research(
+    symbol: str = typer.Argument(...),
+    propose: bool = typer.Option(False, "--propose", help="Create a proposal from the brief"),
+    side: str = typer.Option("", "--side", help="buy/sell; defaults to the brief's suggestion"),
+    allocation_pct: float = typer.Option(
+        0.0, "--allocation-pct", help="defaults to the brief's suggestion"
+    ),
+    created_by: str = typer.Option("research-agent", "--created-by"),
+) -> None:
+    """Research a symbol with the LLM agent; optionally open a proposal from the brief."""
+    from trading_council.research import format_brief, research as run_research
+
+    settings = Settings()
+    try:
+        brief = run_research(symbol, settings)
+    except Exception as exc:  # noqa: BLE001  surface any agent/API failure cleanly
+        typer.echo(f"trading-council: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(format_brief(brief))
+    if not propose:
+        return
+
+    final_side = side or brief.suggested_side
+    final_alloc = allocation_pct or brief.suggested_allocation_pct
+    if final_side == "none":
+        typer.echo("trading-council: brief suggests no trade; pass --side to override", err=True)
+        raise typer.Exit(code=1)
+
+    engine = db.init_db(settings.database_url)
+    with db.get_session(engine) as session:
+        try:
+            proposal = create_proposal(
+                session,
+                symbol=brief.symbol,
+                side=final_side,
+                allocation_pct=Decimal(str(final_alloc)),
+                thesis=brief.thesis,
+                risk=brief.risk,
+                exit_condition=brief.exit_condition,
+                created_by=created_by,
+            )
+        except ValueError as exc:
+            typer.echo(f"trading-council: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        session.commit()
+        typer.echo(f"created proposal {proposal.id} from brief, status={proposal.status}")
+
+
+@app.command()
 def vote(
     proposal_id: str = typer.Argument(...),
     member_id: str = typer.Option(..., "--member-id"),
