@@ -10,6 +10,7 @@ dependencies = [
     "pydantic-settings>=2.3",
     "sqlmodel>=0.0.38",
     "pyyaml>=6.0",
+    "alpaca-py>=0.40",
 ]
 
 [project.scripts]
